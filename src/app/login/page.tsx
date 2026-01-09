@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 // Define the School type
 interface School {
@@ -10,6 +11,7 @@ interface School {
 }
 
 export default function LoginPage() {
+  const router = useRouter();
   const [emailPrefix, setEmailPrefix] = useState('');
   const [schools, setSchools] = useState<School[]>([]);
   const [selectedSchool, setSelectedSchool] = useState<School | null>(null);
@@ -52,26 +54,26 @@ export default function LoginPage() {
     const email = `${emailPrefix}@${selectedSchool.domain}`;
     setError('');
     console.log('Logging in with:', email);
-    // Here you would typically handle the login logic,
-    // e.g., redirect to the quiz page or call an API.
-    // For now, we'll just log it.
+    
+    // DEV: Bypass timegate/lobby and go straight to quiz
+    router.push('/quiz');
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-lg shadow-md md:max-w-lg">
+    <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-zinc-900 transition-colors duration-200">
+      <div className="w-full max-w-md p-8 space-y-6 bg-white dark:bg-zinc-800 rounded-lg shadow-md md:max-w-lg transition-colors duration-200">
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-gray-900">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
             What's The News 2026
           </h1>
-          <h2 className="text-2xl font-semibold text-gray-700 mt-2">
+          <h2 className="text-2xl font-semibold text-gray-700 dark:text-gray-300 mt-2">
             Student Login
           </h2>
         </div>
 
         <form className="space-y-6" onSubmit={handleLogin}>
           <div>
-            <label htmlFor="school" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="school" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
               School
             </label>
             <select
@@ -83,7 +85,7 @@ export default function LoginPage() {
                 setSelectedSchool(school || null);
               }}
               disabled={isLoading}
-              className="block w-full px-3 py-2 mt-1 text-base text-gray-900 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm disabled:bg-gray-200 disabled:cursor-not-allowed"
+              className="block w-full px-3 py-2 mt-1 text-base text-gray-900 dark:text-white bg-white dark:bg-zinc-700 border border-gray-300 dark:border-zinc-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm disabled:bg-gray-200 dark:disabled:bg-zinc-600 disabled:cursor-not-allowed"
             >
               {isLoading ? (
                 <option>Loading schools...</option>
@@ -98,7 +100,7 @@ export default function LoginPage() {
           </div>
 
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
               Email Address
             </label>
             <div className="flex mt-1">
@@ -110,16 +112,16 @@ export default function LoginPage() {
                 onChange={(e) => setEmailPrefix(e.target.value.toLowerCase())}
                 placeholder="e.g. li_weiliang"
                 disabled={isLoading}
-                className="flex-1 w-full min-w-0 px-3 py-2 text-gray-900 placeholder-gray-400 bg-white border border-gray-300 rounded-l-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm disabled:bg-gray-200 disabled:cursor-not-allowed"
+                className="flex-1 w-full min-w-0 px-3 py-2 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 bg-white dark:bg-zinc-700 border border-gray-300 dark:border-zinc-600 rounded-l-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm disabled:bg-gray-200 dark:disabled:bg-zinc-600 disabled:cursor-not-allowed"
               />
-              <span className="inline-flex items-center px-3 text-gray-500 bg-gray-50 border border-l-0 border-gray-300 rounded-r-md sm:text-sm">
+              <span className="inline-flex items-center px-3 text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-zinc-600 border border-l-0 border-gray-300 dark:border-zinc-600 rounded-r-md sm:text-sm">
                 @{selectedSchool?.domain || '...'}
               </span>
             </div>
           </div>
 
           {error && (
-            <div className="p-3 text-sm text-red-700 bg-red-100 rounded-md">
+            <div className="p-3 text-sm text-red-700 bg-red-100 dark:bg-red-900/30 dark:text-red-300 rounded-md">
               {error}
             </div>
           )}
@@ -128,7 +130,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full flex justify-center items-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-indigo-400"
+              className="w-full flex justify-center items-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-indigo-400 dark:disabled:bg-indigo-800 transition-colors"
             >
               {isLoading ? (
                 <>
@@ -145,7 +147,7 @@ export default function LoginPage() {
           </div>
         </form>
 
-        <div className="text-center text-xs text-gray-500">
+        <div className="text-center text-xs text-gray-500 dark:text-gray-400">
             <p>Please use a supported browser on your PLD (iPad, Chromebook, or Laptop).</p>
             <p className="mt-1">By joining, you agree to the exam regulations.</p>
         </div>
