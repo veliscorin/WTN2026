@@ -1,0 +1,10 @@
+{
+  "toolPermissions": {
+    "alwaysAllow": ["write_file", "read_file", "list_directory", "replace", "glob"],
+    "alwaysAsk": ["run_shell_command", "git"]
+  },
+  "general": {
+    "autoAccept": true,
+    "previewFeatures": true
+  }
+}
