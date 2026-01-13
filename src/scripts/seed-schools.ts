@@ -5,20 +5,11 @@ import path from 'path';
 dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
 
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, BatchWriteCommand } from "@aws-sdk/lib-dynamodb";
-import fs from 'fs';
+import { DynamoDBDocumentClient, BatchWriteCommand, ScanCommand } from "@aws-sdk/lib-dynamodb";
 
-// Use env vars or default to 'WTN_Schools'
 const TABLE_NAME = process.env.DYNAMODB_SCHOOLS_TABLE || 'WTN_Schools';
 const REGION = process.env.WTN_AWS_REGION || "ap-southeast-1";
 
-// Validate credentials
-if (!process.env.WTN_AWS_ACCESS_KEY_ID || process.env.WTN_AWS_ACCESS_KEY_ID === 'your_access_key_id') {
-  console.error('❌ Error: Invalid AWS Credentials in .env.local');
-  process.exit(1);
-}
-
-// Initialize Client
 const client = new DynamoDBClient({
   region: REGION,
   credentials: {
@@ -28,15 +19,29 @@ const client = new DynamoDBClient({
 });
 const docClient = DynamoDBDocumentClient.from(client);
 
+const schools = [
+  // Session 1 (Apr 8)
+  { id: "sch_01", name: "Raffles Institution", domain: "ri.edu.sg" },
+  { id: "sch_02", name: "Hwa Chong Institution", domain: "hci.edu.sg" },
+  { id: "sch_03", name: "Anglo-Chinese School (Independent)", domain: "acs.edu.sg" },
+  // Session 2 (Apr 12)
+  { id: "sch_04", name: "Nanyang Girls' High School", domain: "nygh.edu.sg" },
+  { id: "sch_05", name: "Dunman High School", domain: "dhs.edu.sg" },
+  { id: "sch_06", name: "River Valley High School", domain: "rvhs.edu.sg" },
+  // Session 3 (Apr 15)
+  { id: "sch_07", name: "Victoria School", domain: "vs.edu.sg" },
+  { id: "sch_08", name: "Cedar Girls' Secondary School", domain: "cedar.edu.sg" },
+  { id: "sch_09", name: "St. Joseph's Institution", domain: "sji.edu.sg" }
+];
+
 async function seedSchools() {
   try {
-    const dataPath = path.join(process.cwd(), 'src', 'types', 'schools.json');
-    const fileContents = fs.readFileSync(dataPath, 'utf8');
-    const schools = JSON.parse(fileContents);
+    console.log(`Clearing and reseeding ${TABLE_NAME}...`);
 
-    console.log(`Loaded ${schools.length} schools.`);
-    console.log(`Target Table: ${TABLE_NAME}`);
-    console.log(`Region: ${REGION}`);
+    // 1. Write new data (BatchWrite overwrites items with same keys)
+    // Note: To truly "clear" we'd delete first, but overwriting is usually sufficient 
+    // unless you want to remove old IDs like 'sch_10' if they existed.
+    // For now, I'll just overwrite.
 
     // DynamoDB BatchWrite limit is 25 items
     const chunkArray = (arr: any[], size: number): any[][] =>
@@ -61,7 +66,7 @@ async function seedSchools() {
       await docClient.send(command);
     }
 
-    console.log('✅ All schools seeded successfully!');
+    console.log('✅ 9 Schools seeded successfully!');
 
   } catch (error) {
     console.error('❌ Error seeding schools:', error);

@@ -1,23 +1,29 @@
-# 🛠️ Technical Specification: Next.js Prototype
+# 🛠️ Technical Specification: AWS Serverless Quiz Engine
 
 ## 1. Stack & Environment
 * **Framework:** Next.js 16 (App Router).
 * **Styling:** Tailwind CSS (Mobile-first, Exam Aesthetic).
-* **Deployment:** Vercel.
-* **State Management:** React Context or Redux for quiz state tracking.
+* **Deployment:** AWS Amplify (Singapore / ap-southeast-1).
+* **Database:** AWS DynamoDB (Serverless).
 
-## 2. Data Strategy (Prototype Phase)
-* **Local Mocks:** All data fetched from `@/src/data/`.
-    - `questions.json`: Stores question text and options.
-    - `schools.json`: Map of school names to email domains.
-* **Type Safety:** All quiz objects must implement interfaces defined in `@/src/types/quiz.ts`.
+## 2. Data Strategy
+* **Live Database:** All critical data is stored in DynamoDB tables with `WTN_` prefix.
+    - `WTN_Participants`: Student progress, scores, and disqualification status.
+    - `WTN_Questions`: Exam content (answer keys redacted on server).
+    - `WTN_Schools`: Allowed schools and domains.
+    - `WTN_Sessions`: Exam windows and school assignments.
+* **Environment Variables:** `WTN_AWS_ACCESS_KEY_ID`, `WTN_AWS_SECRET_ACCESS_KEY`, `WTN_AWS_REGION` used for SDK initialization.
 
 ## 3. Component Architecture
 * **`QuizContainer`**: Handles state, strike logic, and question indexing.
 * **`QuestionCard`**: Stateless component for rendering MCQ options.
 * **`StrikeModal`**: High-priority overlay for cheating warnings.
 
-## 4. Strike System Implementation
-* Use a global `useEffect` at the layout level to attach listeners for `visibilitychange`.
-* Maintain a `strikeCount` in state.
-* If `strikeCount === 3`, immediately set `isDisqualified` to true and clear local session storage.
+## 4. Logic Implementation
+* **Session Management**: Login window opens 30 mins before `WTN_Sessions.startTime`. Logic handled in `src/app/page.tsx` and `src/app/lobby/page.tsx`.
+* **Strike System**: Global `useEffect` attaches listeners for `visibilitychange`. 3 strikes = `isDisqualified: true` in `WTN_Participants`.
+* **Anti-Sabotage**: DynamoDB Conditional Writes ensure only one active session per email/school pair.
+
+## 5. Deployment Pipeline
+* **Build Spec**: `amplify.yml` handles dependency installation (`npm ci`) and builds the Next.js app (`npm run build`).
+* **Environment Injection**: Sensitive variables are written to `.env.production` during the Amplify `preBuild` phase to ensure server-side access at runtime.

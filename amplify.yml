@@ -13,6 +13,7 @@ frontend:
         - 'echo "DYNAMODB_USER_TABLE=$DYNAMODB_USER_TABLE" >> .env.production'
         - 'echo "DYNAMODB_QUESTIONS_TABLE=$DYNAMODB_QUESTIONS_TABLE" >> .env.production'
         - 'echo "DYNAMODB_SCHOOLS_TABLE=$DYNAMODB_SCHOOLS_TABLE" >> .env.production'
+        - 'echo "DYNAMODB_SESSIONS_TABLE=$DYNAMODB_SESSIONS_TABLE" >> .env.production'
     build:
       commands:
         - npm run build

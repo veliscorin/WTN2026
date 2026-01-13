@@ -4,7 +4,10 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAntiCheat } from '@/hooks/useAntiCheat';
 import questionsData from '@/data/questions.json';
-import { SESSION_END_TIME } from '@/config/session';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
+import { isTestMode, TEST_MODE_CONFIG } from '@/lib/test-mode';
 
 type Question = {
   qid: string;
@@ -26,38 +29,137 @@ function shuffle<T>(array: T[]): T[] {
 export default function QuizPage() {
   const router = useRouter();
   
-  // Initialize quiz with randomized questions and options
-  // This runs only once on mount (lazy initialization)
-  const [quizQuestions] = useState<Question[]>(() => {
-    const easy = questionsData.filter(q => q.difficulty === 'Easy');
-    const medium = questionsData.filter(q => q.difficulty === 'Medium');
-    const hard = questionsData.filter(q => q.difficulty === 'Hard');
-
-    // Shuffle questions within each bucket
-    const shuffledQuestions = [
-      ...shuffle(easy),
-      ...shuffle(medium),
-      ...shuffle(hard)
-    ];
-
-    // Shuffle options for each question
-    return shuffledQuestions.map(q => ({
-      ...q,
-      options: shuffle(q.options)
-    }));
-  });
-
+  // State
+  const [quizQuestions, setQuizQuestions] = useState<Question[] | null>(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [responses, setResponses] = useState<Record<string, string>>({});
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [showWarningModal, setShowWarningModal] = useState(false);
+  const [sessionEndTime, setSessionEndTime] = useState<number | null>(null);
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // User Info
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [schoolId, setSchoolId] = useState<string | null>(null);
+  const [schoolName, setSchoolName] = useState<string | null>(null);
 
   const { strikeCount } = useAntiCheat({
     onDisqualify: () => {
       router.push('/disqualified');
     },
   });
+
+  // 1. Initialize Session & State
+  useEffect(() => {
+    async function init() {
+      try {
+        const email = localStorage.getItem('wtn_user_email');
+        const sId = localStorage.getItem('wtn_school_id');
+        const sName = localStorage.getItem('wtn_school_name');
+
+        if (!email || !sId) {
+          console.error("No user info found");
+          router.push('/');
+          return;
+        }
+        setUserEmail(email);
+        setSchoolId(sId);
+        setSchoolName(sName);
+
+        // Fetch Session Info
+        const sessionRes = await fetch(`/api/session?schoolId=${sId}`);
+        if (!sessionRes.ok) throw new Error("Failed to load session");
+        const sessionData = await sessionRes.json();
+        const startTime = new Date(sessionData.startTime).getTime();
+        
+        // Duration from DB
+        setSessionEndTime(startTime + (sessionData.durationMinutes * 60 * 1000));
+
+        // Fetch User State (Persistence)
+        const stateRes = await fetch(`/api/quiz/state?email=${email}`);
+        
+        if (stateRes.ok) {
+          // Restore State
+          const state = await stateRes.json();
+          
+          // If already completed or disqualified, redirect
+          if (state.status === 'COMPLETED') {
+            router.push('/results');
+            return;
+          }
+          if (state.status === 'DISQUALIFIED' || state.is_disqualified) {
+            router.push('/disqualified');
+            return;
+          }
+
+          if (state.question_order && state.question_order.length > 0) {
+            // Reconstruct questions from order
+            const orderedQuestions = state.question_order.map((qid: string) => {
+               const q = questionsData.find(q => q.qid === qid);
+               // Note: Options are re-shuffled on restore for now, but Question order is preserved.
+               return q ? { ...q, options: shuffle(q.options) } : null;
+            }).filter(Boolean) as Question[];
+
+            setQuizQuestions(orderedQuestions);
+            setCurrentQuestionIndex(state.current_index || 0);
+            setResponses(state.answers || {});
+            setIsLoading(false);
+            return;
+          }
+        }
+
+        // New User: Generate Random Order
+        let easy = questionsData.filter(q => q.difficulty === 'Easy');
+        let medium = questionsData.filter(q => q.difficulty === 'Medium');
+        let hard = questionsData.filter(q => q.difficulty === 'Hard');
+
+        easy = shuffle(easy);
+        medium = shuffle(medium);
+        hard = shuffle(hard);
+
+        // Test Mode: Limit questions
+        if (isTestMode()) {
+            easy = easy.slice(0, 2);
+            medium = medium.slice(0, 2);
+            hard = hard.slice(0, 2);
+        }
+
+        const shuffledQuestions = [
+          ...easy,
+          ...medium,
+          ...hard
+        ].map(q => ({ ...q, options: shuffle(q.options) }));
+
+        setQuizQuestions(shuffledQuestions);
+        
+        // Save Initial State
+        const questionOrder = shuffledQuestions.map(q => q.qid);
+        await fetch('/api/quiz/state', {
+            method: 'POST',
+            body: JSON.stringify({
+                email,
+                schoolId: sId,
+                state: {
+                    status: 'IN_PROGRESS',
+                    question_order: questionOrder,
+                    current_index: 0,
+                    start_time: Date.now(),
+                    strike_count: 0
+                }
+            })
+        });
+
+        setIsLoading(false);
+
+      } catch (err) {
+        console.error("Initialization error:", err);
+        // Fallback? Or Redirect?
+      }
+    }
+
+    init();
+  }, [router]);
 
   // Effect to handle strike warnings
   useEffect(() => {
@@ -68,22 +170,38 @@ export default function QuizPage() {
 
   // Effect for Timer
   useEffect(() => {
-    const checkTime = () => {
+    if (!sessionEndTime) return;
+
+    const checkTime = async () => {
       const now = Date.now();
-      const left = SESSION_END_TIME - now;
+      const left = sessionEndTime - now;
+      
       if (left <= 0) {
-        // Time is up
+        // Mark as completed in DB if possible
+        if (userEmail && schoolId) {
+          try {
+            await fetch('/api/quiz/state', {
+                method: 'POST',
+                body: JSON.stringify({
+                    email: userEmail,
+                    schoolId: schoolId,
+                    state: { status: 'COMPLETED' }
+                })
+            });
+          } catch (e) {
+            console.error("Error auto-completing session:", e);
+          }
+        }
         router.push('/results');
       } else {
         setTimeRemaining(left);
       }
     };
 
-    checkTime(); // Check immediately
+    checkTime(); 
     const interval = setInterval(checkTime, 1000);
-
     return () => clearInterval(interval);
-  }, [router]);
+  }, [sessionEndTime, router]);
 
   const formatTime = (ms: number) => {
     const totalSeconds = Math.max(0, Math.floor(ms / 1000));
@@ -92,61 +210,95 @@ export default function QuizPage() {
     return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   };
 
-  // Guard against empty data
-  if (!quizQuestions.length) {
-    return <div className="p-8 text-center">Loading quiz...</div>;
-  }
-
-  const currentQuestion = quizQuestions[currentQuestionIndex];
-  const totalQuestions = quizQuestions.length;
-
   const handleOptionSelect = (option: string) => {
     setSelectedOption(option);
   };
 
-  const handleNext = () => {
-    if (!selectedOption) return;
+  const handleNext = async () => {
+    if (!selectedOption || !quizQuestions || !userEmail || !schoolId) return;
 
-    // Save response
+    const currentQuestion = quizQuestions[currentQuestionIndex];
     const newResponses = { ...responses, [currentQuestion.qid]: selectedOption };
-    setResponses(newResponses);
     
-    // Reset selection
+    setResponses(newResponses);
     setSelectedOption(null);
 
-    // Move to next question or finish
-    if (currentQuestionIndex < totalQuestions - 1) {
-      setCurrentQuestionIndex(prev => prev + 1);
-    } else {
-      // Finished
-      console.log("Final Responses:", newResponses); 
+    const nextIndex = currentQuestionIndex + 1;
+    const isFinished = nextIndex >= quizQuestions.length;
+
+    // Optimistic UI Update
+    if (!isFinished) {
+      setCurrentQuestionIndex(nextIndex);
+    }
+    // else if (isFinished) { // This else if is not in the original replace string, but it is in the original search string. I should keep the replace string as is. The original replace string has `else { router.push('/results'); }`
+    else {
       router.push('/results');
     }
+
+    // Background Save
+    try {
+        await fetch('/api/quiz/state', {
+            method: 'POST',
+            body: JSON.stringify({
+                email: userEmail,
+                schoolId: schoolId,
+                state: {
+                    status: isFinished ? 'COMPLETED' : 'IN_PROGRESS',
+                    current_index: isFinished ? currentQuestionIndex : nextIndex,
+                    answers: newResponses,
+                }
+            })
+        });
+    } catch (e) {
+        console.error("Failed to save progress", e);
+    }
   };
+
+  if (isLoading || !quizQuestions) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-zinc-900">
+        <div className="text-xl font-semibold text-gray-600 dark:text-gray-400 animate-pulse">
+          Loading Quiz Environment...
+        </div>
+      </div>
+    );
+  }
+
+  const currentQuestion = quizQuestions[currentQuestionIndex];
+  const totalQuestions = quizQuestions.length;
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-zinc-900 flex flex-col items-center py-10 px-4 select-none">
       {/* Warning Modal */}
       {showWarningModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="bg-white dark:bg-zinc-800 p-8 rounded-lg shadow-2xl max-w-md w-full text-center border-2 border-red-500">
-            <h2 className="text-2xl font-bold text-red-600 mb-4">⚠️ WARNING!</h2>
-            <p className="text-lg mb-6 text-gray-700 dark:text-gray-300">
-              Do not leave the exam! You have {strikeCount} strike(s).
-              <br />
-              <span className="font-bold">3 strikes will result in immediate disqualification.</span>
-            </p>
-            <button 
-              onClick={() => setShowWarningModal(false)}
-              className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded transition-colors"
-            >
-              I Understand
-            </button>
-          </div>
+          <Card className="max-w-md w-full border-2 border-red-500 shadow-2xl">
+            <CardContent className="p-8 text-center">
+                <h2 className="text-2xl font-bold text-red-600 mb-4">⚠️ WARNING!</h2>
+                <p className="text-lg mb-6 text-gray-700 dark:text-gray-300">
+                Do not leave the exam! You have {strikeCount} strike(s).
+                <br />
+                <span className="font-bold">3 strikes will result in immediate disqualification.</span>
+                </p>
+                <Button 
+                variant="danger"
+                onClick={() => setShowWarningModal(false)}
+                className="w-full"
+                >
+                I Understand
+                </Button>
+            </CardContent>
+          </Card>
         </div>
       )}
 
-      <div className="w-full max-w-3xl bg-white dark:bg-zinc-800 rounded-xl shadow-lg overflow-hidden">
+      <Card className="w-full max-w-3xl border-0 sm:border shadow-lg overflow-hidden">
+        {/* System Bar */}
+        <div className="bg-gray-50 dark:bg-zinc-950/50 px-6 py-2 border-b border-gray-200 dark:border-zinc-800 flex justify-between items-center text-xs font-mono text-gray-500 dark:text-gray-400">
+            <span className="truncate max-w-[200px]" title={userEmail || ''}>{userEmail}</span>
+            <span className="truncate max-w-[200px]" title={schoolName || ''}>{schoolName || schoolId}</span>
+        </div>
+
         {/* Header: Progress, Timer & Strikes */}
         <div className="bg-gray-100 dark:bg-zinc-900/50 p-6 flex flex-col sm:flex-row justify-between items-center border-b border-gray-200 dark:border-zinc-700 gap-4">
           <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-8">
@@ -178,11 +330,12 @@ export default function QuizPage() {
         {/* Question Area */}
         <div className="p-8 sm:p-10">
           <div className="mb-2">
-            <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold tracking-wide uppercase 
-              ${currentQuestion.difficulty === 'Easy' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
+            <span className={cn(
+                "inline-block px-3 py-1 rounded-full text-xs font-bold tracking-wide uppercase",
+                currentQuestion.difficulty === 'Easy' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
                 currentQuestion.difficulty === 'Medium' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
                 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-              }`}>
+            )}>
               {currentQuestion.difficulty}
             </span>
           </div>
@@ -196,13 +349,17 @@ export default function QuizPage() {
               <button
                 key={idx}
                 onClick={() => handleOptionSelect(option)}
-                className={`w-full text-left p-5 rounded-lg border-2 transition-all duration-200 group flex items-center justify-between
-                  ${selectedOption === option 
-                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 shadow-md transform scale-[1.01]' 
-                    : 'border-gray-200 dark:border-zinc-700 hover:border-gray-300 dark:hover:border-zinc-600 hover:bg-gray-50 dark:hover:bg-zinc-700/50'
-                  }`}
+                className={cn(
+                    "w-full text-left p-5 rounded-lg border-2 transition-all duration-200 group flex items-center justify-between",
+                    selectedOption === option 
+                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 shadow-md transform scale-[1.01]' 
+                        : 'border-gray-200 dark:border-zinc-700 hover:border-gray-300 dark:hover:border-zinc-600 hover:bg-gray-50 dark:hover:bg-zinc-700/50'
+                )}
               >
-                <span className={`text-lg font-medium ${selectedOption === option ? 'text-blue-700 dark:text-blue-300' : 'text-gray-700 dark:text-gray-300'}`}>
+                <span className={cn(
+                    "text-lg font-medium",
+                    selectedOption === option ? 'text-blue-700 dark:text-blue-300' : 'text-gray-700 dark:text-gray-300'
+                )}>
                   {option}
                 </span>
                 {selectedOption === option && (
@@ -217,19 +374,16 @@ export default function QuizPage() {
 
         {/* Footer: Action Button */}
         <div className="bg-gray-50 dark:bg-zinc-900/50 p-6 border-t border-gray-200 dark:border-zinc-700 flex justify-end">
-          <button
+          <Button
             onClick={handleNext}
             disabled={!selectedOption}
-            className={`px-8 py-3 rounded-lg font-bold text-lg shadow-lg transition-all transform
-              ${!selectedOption 
-                ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
-                : 'bg-blue-600 text-white hover:bg-blue-700 hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0'
-              }`}
+            size="lg"
+            className={cn("px-8 text-lg shadow-lg", !selectedOption && "bg-gray-300 text-gray-500")}
           >
             {currentQuestionIndex === totalQuestions - 1 ? 'Finish Exam' : 'Confirm & Next'}
-          </button>
+          </Button>
         </div>
-      </div>
+      </Card>
     </div>
   );
 }

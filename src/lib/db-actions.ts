@@ -1,9 +1,9 @@
 import { docClient } from "./aws-config";
-import { UpdateCommand, ScanCommand } from "@aws-sdk/lib-dynamodb";
+import { UpdateCommand, ScanCommand, GetCommand } from "@aws-sdk/lib-dynamodb";
 import { UserState, Question, Difficulty, School } from "../types/quiz";
 
-const USER_TABLE = process.env.DYNAMODB_USER_TABLE || "UserState";
-const QUESTIONS_TABLE = process.env.DYNAMODB_QUESTIONS_TABLE || "Questions";
+const USER_TABLE = process.env.DYNAMODB_USER_TABLE || "WTN_Participants";
+const QUESTIONS_TABLE = process.env.DYNAMODB_QUESTIONS_TABLE || "WTN_Questions";
 const SCHOOLS_TABLE = process.env.DYNAMODB_SCHOOLS_TABLE || "WTN_Schools";
 
 export async function getSchools(): Promise<School[]> {
@@ -13,6 +13,16 @@ export async function getSchools(): Promise<School[]> {
 
   const response = await docClient.send(command);
   return (response.Items || []) as School[];
+}
+
+export async function getUserState(email: string): Promise<UserState | null> {
+  const command = new GetCommand({
+    TableName: USER_TABLE,
+    Key: { email },
+  });
+
+  const response = await docClient.send(command);
+  return (response.Item as UserState) || null;
 }
 
 export async function saveUserState(email: string, schoolId: string, state: Partial<UserState>) {
@@ -51,6 +61,19 @@ export async function saveUserState(email: string, schoolId: string, state: Part
   await docClient.send(command);
 }
 
+export interface QuestionWithKey extends Question {
+  correct_key: string;
+}
+
+export async function getAllQuestionsInternal(): Promise<QuestionWithKey[]> {
+  const command = new ScanCommand({
+    TableName: QUESTIONS_TABLE,
+  });
+
+  const response = await docClient.send(command);
+  return (response.Items || []) as QuestionWithKey[];
+}
+
 export async function getQuestionsByDifficulty(difficulty: Difficulty): Promise<Question[]> {
   const command = new ScanCommand({
     TableName: QUESTIONS_TABLE,
@@ -76,10 +99,14 @@ export async function flagDisqualified(email: string) {
   const command = new UpdateCommand({
     TableName: USER_TABLE,
     Key: { email },
-    UpdateExpression: "SET is_disqualified = :true, strike_count = :max",
+    UpdateExpression: "SET is_disqualified = :true, strike_count = :max, #s = :status",
+    ExpressionAttributeNames: {
+      "#s": "status"
+    },
     ExpressionAttributeValues: {
       ":true": true,
-      ":max": 3
+      ":max": 3,
+      ":status": "DISQUALIFIED"
     }
   });
   await docClient.send(command);

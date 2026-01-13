@@ -20,7 +20,12 @@ The Synchronized Quiz Engine is a high-concurrency, serverless MCQ platform buil
 ## 3. FUNCTIONAL REQUIREMENTS
 
 ### 3.1 Pre-Login & Anti-Sabotage Authentication
-* **Early Access:** The login portal opens 20 minutes before the official `StartTime`.
+* **Early Access:** The login portal opens 30 minutes before the official `StartTime`.
+* **Strict Gating:**
+    - **Before Window:** Login blocked ("Quiz not started").
+    - **In Window (T-30 to T-0):** Login allowed -> Lobby.
+    - **Live Session (T-0 to T+Duration):** Login allowed -> Direct to Quiz (Late Join).
+    - **Ended (T+Duration):** Login blocked ("Session Ended").
 * **Login Credentials:** Email Prefix + School Selection (Dropdown).
 * **Overwrite Protection (Sabotage Lock):**
     * The system **must** use **DynamoDB Conditional Writes** (`attribute_not_exists`).
@@ -50,6 +55,11 @@ The Synchronized Quiz Engine is a high-concurrency, serverless MCQ platform buil
 * At the exact `SessionEndTime`, the Lambda backend must return a `410 Gone` for any answer submissions.
 * The frontend must immediately terminate the quiz and redirect to a "Submission Complete" page.
 
+### 3.6 Resume Session Logic
+* **State Detection:** On Login page mount, the system checks `localStorage` for an existing session.
+* **Resume UI:** If found, the user is presented with a "Resume Quiz" (or "View Results" if `status === 'COMPLETED'`) card instead of the login form.
+* **Escape Hatch:** A "Switch Account" option allows clearing local state and returning to the standard login form.
+
 ---
 
 ## 4. RANKING & REPORTING LOGIC
@@ -68,30 +78,57 @@ The Synchronized Quiz Engine is a high-concurrency, serverless MCQ platform buil
 
 ## 5. TECHNICAL DATA SCHEMA
 
-### Table: UserState (DynamoDB)
+### Table: UserState (DynamoDB: WTN_Participants)
 | Field | Type | Description |
 | :--- | :--- | :--- |
 | **email** | String (PK) | Full validated school email (Sabotage-protected). |
 | **school_id** | String | ID of the school from the dropdown. |
 | **status** | String | `LOBBY`, `IN_PROGRESS`, `COMPLETED`, `DISQUALIFIED`. |
 | **current_index** | Number | The question index currently being viewed (0-29). |
+| **question_order** | List | Randomized array of QIDs generated at start to ensure persistence. |
+| **answers** | Map | Map of QID to selected option value. |
 | **score** | Number | Running total of correctly answered questions. |
 | **strike_count** | Number | Number of anti-cheating violations (max 3). |
 | **start_time** | Timestamp | Epoch MS recorded when the student first exits the Lobby. |
 | **is_disqualified** | Boolean | Flag to exclude student from ranking and stop quiz. |
 
-### Table: Questions (DynamoDB)
+### Table: Questions (DynamoDB: WTN_Questions)
 | Field | Type | Description |
 | :--- | :--- | :--- |
-| **qid** | String (PK) | Unique question identifier. |
+| **id** | String (PK) | Unique question identifier. |
 | **difficulty** | String | easy / medium / hard. |
 | **text** | String | The question/prompt text. |
 | **options** | Array | List of 4 MCQ choices. |
 | **correct_key** | String | **REDACTED:** Used for server-side scoring only. |
 
+### Table: Schools (DynamoDB: WTN_Schools)
+| Field | Type | Description |
+| :--- | :--- | :--- |
+| **id** | String (PK) | Unique school identifier (e.g., 'sch_01'). |
+| **name** | String | Full school name. |
+| **domain** | String | Email domain (e.g., 'ri.edu.sg'). |
+
+### Table: Sessions (DynamoDB: WTN_Sessions)
+| Field | Type | Description |
+| :--- | :--- | :--- |
+| **id** | String (PK) | Unique session identifier. |
+| **startTime** | String | ISO 8601 String (e.g., 2026-04-08T11:00:00+08:00). |
+| **durationMinutes** | Number | Session duration in minutes. |
+| **schoolIds** | List | List of School IDs allowed in this session. |
+
 ---
 
 ## 6. SECURITY & PERFORMANCE SPECIFICATION
+* **Stack:** Next.js 16, Tailwind CSS 4 (PostCSS), TypeScript.
+* **UI Patterns:** Reusable components in `src/components/ui`, class-merging via `cn` utility (`clsx` + `tailwind-merge`).
 * **Scaling:** Provisioned Concurrency (8,000–10,000 units) to be active 15 mins before and after each window.
 * **Networking:** Non-VPC Lambda execution to eliminate ENI cold-start delays.
 * **Persistence:** Write-on-action strategy for all student responses to prevent data loss on school Wi-Fi drops.
+
+### 6.1 Test Mode
+* **Trigger:** Enabled via `NEXT_PUBLIC_TEST_MODE=true`.
+* **Behavior:** 
+    - Question count limited to 6 (2 per difficulty).
+    - Login entry window reduced to 3 minutes.
+    - Global "Big Red Banner" indicates Test Mode status.
+    - Duration remains database-driven for dynamic testing.
