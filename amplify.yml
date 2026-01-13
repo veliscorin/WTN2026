@@ -1,0 +1,19 @@
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - npm ci
+        - echo "Verifying WTN DynamoDB environment variables..."
+        - if [ -z "$DYNAMODB_USER_TABLE" ]; then echo "❌ Error: DYNAMODB_USER_TABLE is not set"; exit 1; else echo "✅ DYNAMODB_USER_TABLE is present"; fi
+        - if [ -z "$DYNAMODB_QUESTIONS_TABLE" ]; then echo "❌ Error: DYNAMODB_QUESTIONS_TABLE is not set"; exit 1; else echo "✅ DYNAMODB_QUESTIONS_TABLE is present"; fi
+    build:
+      commands:
+        - npm run build
+  artifacts:
+    baseDirectory: .next
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - node_modules/**/*
