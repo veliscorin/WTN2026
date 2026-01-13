@@ -6,8 +6,13 @@ frontend:
         - npm ci
         - 'echo "Verifying WTN DynamoDB environment variables..."'
         - 'if [ -z "$DYNAMODB_USER_TABLE" ]; then echo "❌ Error: DYNAMODB_USER_TABLE is not set"; exit 1; else echo "✅ DYNAMODB_USER_TABLE is present"; fi'
-        - 'if [ -z "$DYNAMODB_QUESTIONS_TABLE" ]; then echo "❌ Error: DYNAMODB_QUESTIONS_TABLE is not set"; exit 1; else echo "✅ DYNAMODB_QUESTIONS_TABLE is present"; fi'
-        - 'if [ -z "$DYNAMODB_SCHOOLS_TABLE" ]; then echo "❌ Error: DYNAMODB_SCHOOLS_TABLE is not set"; exit 1; else echo "✅ DYNAMODB_SCHOOLS_TABLE is present"; fi'
+        - 'echo "Creating .env.production file..."'
+        - 'echo "WTN_AWS_ACCESS_KEY_ID=$WTN_AWS_ACCESS_KEY_ID" >> .env.production'
+        - 'echo "WTN_AWS_SECRET_ACCESS_KEY=$WTN_AWS_SECRET_ACCESS_KEY" >> .env.production'
+        - 'echo "WTN_AWS_REGION=$WTN_AWS_REGION" >> .env.production'
+        - 'echo "DYNAMODB_USER_TABLE=$DYNAMODB_USER_TABLE" >> .env.production'
+        - 'echo "DYNAMODB_QUESTIONS_TABLE=$DYNAMODB_QUESTIONS_TABLE" >> .env.production'
+        - 'echo "DYNAMODB_SCHOOLS_TABLE=$DYNAMODB_SCHOOLS_TABLE" >> .env.production'
     build:
       commands:
         - npm run build
