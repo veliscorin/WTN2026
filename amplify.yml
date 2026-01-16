@@ -14,6 +14,8 @@ frontend:
         - 'echo "DYNAMODB_QUESTIONS_TABLE=$DYNAMODB_QUESTIONS_TABLE" >> .env.production'
         - 'echo "DYNAMODB_SCHOOLS_TABLE=$DYNAMODB_SCHOOLS_TABLE" >> .env.production'
         - 'echo "DYNAMODB_SESSIONS_TABLE=$DYNAMODB_SESSIONS_TABLE" >> .env.production'
+        - 'echo "BASIC_AUTH_USER=$BASIC_AUTH_USER" >> .env.production'
+        - 'echo "BASIC_AUTH_PASS=$BASIC_AUTH_PASS" >> .env.production'
     build:
       commands:
         - npm run build
