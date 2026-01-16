@@ -26,4 +26,12 @@
 
 ## 5. Deployment Pipeline
 * **Build Spec**: `amplify.yml` handles dependency installation (`npm ci`) and builds the Next.js app (`npm run build`).
-* **Environment Injection**: Sensitive variables are written to `.env.production` during the Amplify `preBuild` phase to ensure server-side access at runtime.
+* **Environment Injection:** Sensitive variables are written to `.env.production` during the Amplify `preBuild` phase to ensure server-side access at runtime.
+
+## 6. INFRASTRUCTURE & DNS
+* **DNS Provider:** AWS Route 53.
+    * **Resolution:** Solved infinite spinning/SSL handshake issues on root domain by migrating away from Vodien.
+    * **Configuration:** Root (`@`) and `www` are configured as A (Alias) records targeting the Amplify distribution.
+* **Compute Platform:** AWS Amplify Managed Next.js (`WEB_COMPUTE`).
+    * **Role:** Automatically manages serverless compute for SSR and API routes.
+    * **Benefit:** Zero manual Lambda management; seamless scaling for Next.js App Router.

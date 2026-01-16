@@ -31,5 +31,6 @@ export interface Session {
   name: string; // e.g., "April 8 - Morning"
   startTime: string; // ISO 8601 String (e.g. "2026-04-08T11:00:00+08:00")
   durationMinutes: number; // e.g., 30
+  entryWindowMinutes?: number; // Optional override for lobby window (e.g., 5)
   schoolIds: string[]; // List of school IDs allowed in this session
 }

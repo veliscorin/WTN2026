@@ -60,6 +60,7 @@ async function seed() {
         name: s.name,
         startTime: s.startTimeStr, 
         durationMinutes: DURATION_MINUTES,
+        entryWindowMinutes: 30, // Standard 30 min lobby
         schoolIds: s.schoolIds
       }
     });
@@ -78,7 +79,8 @@ async function seed() {
     id: "test_session_now",
     name: "Live Test Session",
     startTime: toSingaporeISO(testStartTime),
-    durationMinutes: 30,
+    durationMinutes: 5,
+    entryWindowMinutes: 3, // Short 3 min lobby for testing
     schoolIds: ["sch_01", "sch_02", "sch_03", "sch_04", "sch_05", "sch_06", "sch_07", "sch_08", "sch_09"]
   };
 

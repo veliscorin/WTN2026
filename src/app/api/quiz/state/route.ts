@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getUserState, saveUserState } from '@/lib/db-actions';
+import questionsData from '@/data/questions.json';
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -30,8 +31,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
+    // Server-side scoring logic
+    if (state.answers) {
+      let currentScore = 0;
+      Object.entries(state.answers).forEach(([qid, answer]) => {
+        const question = questionsData.find((q) => q.qid === qid);
+        if (question && question.correct_key === answer) {
+          currentScore += 1;
+        }
+      });
+      state.score = currentScore;
+    }
+
     await saveUserState(email, schoolId, state);
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, score: state.score });
   } catch (error) {
     console.error('Error saving user state:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

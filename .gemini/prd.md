@@ -125,7 +125,12 @@ The Synchronized Quiz Engine is a high-concurrency, serverless MCQ platform buil
 * **Networking:** Non-VPC Lambda execution to eliminate ENI cold-start delays.
 * **Persistence:** Write-on-action strategy for all student responses to prevent data loss on school Wi-Fi drops.
 
-### 6.1 Test Mode
+### 6.1 Infrastructure & DNS
+* **DNS Migration:** Migrated from Vodien to AWS Route 53 to resolve root domain SSL handshake/latency issues.
+* **Record Strategy:** Uses A (Alias) records for both root (`@`) and `www` pointing strictly to the Amplify CloudFront distribution.
+* **Compute Platform:** Uses Amplify's managed `WEB_COMPUTE` platform. This handles all Next.js SSR and API routes automatically, removing the need for manual Lambda function management.
+
+### 6.2 Test Mode
 * **Trigger:** Enabled via `NEXT_PUBLIC_TEST_MODE=true`.
 * **Behavior:** 
     - Question count limited to 6 (2 per difficulty).

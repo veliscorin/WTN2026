@@ -12,12 +12,17 @@ function toSingaporeISO(date: Date) {
     return localTime.toISOString().split('.')[0] + '+08:00';
 }
 
-export async function GET() {
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
   const SESSIONS_TABLE = process.env.DYNAMODB_SESSIONS_TABLE || "WTN_Sessions";
   
-  // Calculate Start Time: Now + 3 Minutes
+  // Parse Query Params (Default: Lobby=3, Duration=5)
+  const lobbyMinutes = parseInt(searchParams.get('lobby') || '3', 10);
+  const durationMinutes = parseInt(searchParams.get('duration') || '5', 10);
+
+  // Calculate Start Time: Now + Lobby Minutes
   const now = Date.now();
-  const future = new Date(now + (3 * 60 * 1000));
+  const future = new Date(now + (lobbyMinutes * 60 * 1000));
   const startTimeStr = toSingaporeISO(future);
 
   // Define the Test Session
@@ -25,7 +30,8 @@ export async function GET() {
     id: "test_session_now",
     name: "Client Test Session (Reset)",
     startTime: startTimeStr,
-    durationMinutes: 30, // Standard duration
+    durationMinutes: durationMinutes,
+    entryWindowMinutes: lobbyMinutes,
     // Allow all standard seeded schools
     schoolIds: ["sch_01", "sch_02", "sch_03", "sch_04", "sch_05", "sch_06", "sch_07", "sch_08", "sch_09"]
   };
@@ -43,11 +49,11 @@ export async function GET() {
       message: "Test session 'test_session_now' has been reset.",
       details: {
         startTime: startTimeStr,
-        startsIn: "3 minutes",
-        duration: "30 minutes",
+        startsIn: `${lobbyMinutes} minutes`,
+        duration: `${durationMinutes} minutes`,
         targetSessionId: "test_session_now"
       },
-      instruction: "You can now log in at /prototype. The lobby will open immediately, and the quiz will start in 3 minutes."
+      instruction: `You can now log in at /prototype. The lobby will open immediately, and the quiz will start in ${lobbyMinutes} minutes.`
     });
 
   } catch (error) {

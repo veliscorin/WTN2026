@@ -31,6 +31,7 @@ export default function LoginPage() {
   // UI States
   const [isLoadingSchools, setIsLoadingSchools] = useState(true);
   const [isCheckingSession, setIsCheckingSession] = useState(false);
+  const [isJoining, setIsJoining] = useState(false);
   const [loginAllowed, setLoginAllowed] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
   const [error, setError] = useState('');
@@ -120,8 +121,11 @@ export default function LoginPage() {
         // Calculate Duration & End Time
         const endTime = startTime + (session.durationMinutes * 60 * 1000);
         
-        // Calculate Login Window (Respecting Test Mode)
-        const windowMinutes = isTestMode() ? TEST_MODE_CONFIG.LOGIN_WINDOW_MINUTES : 30;
+        // Calculate Login Window (Prioritize DB config -> Test Mode -> Default 30)
+        const windowMinutes = session.entryWindowMinutes !== undefined 
+            ? session.entryWindowMinutes 
+            : (isTestMode() ? TEST_MODE_CONFIG.LOGIN_WINDOW_MINUTES : 30);
+
         const loginOpenTime = startTime - (windowMinutes * 60 * 1000);
 
         if (now > endTime) {
@@ -152,9 +156,9 @@ export default function LoginPage() {
     return () => { isMounted = false; };
   }, [selectedSchool]);
 
-  const handleLogin = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!loginAllowed) return;
+    if (!loginAllowed || isJoining) return;
 
     if (!emailPrefix.trim()) {
       setError('Please enter your email prefix.');
@@ -167,15 +171,50 @@ export default function LoginPage() {
 
     const email = `${emailPrefix}@${selectedSchool.domain}`;
     setError('');
-    console.log('Logging in with:', email);
+    setIsJoining(true);
     
-    // Save session info
-    localStorage.setItem('wtn_user_email', email);
-    localStorage.setItem('wtn_school_id', selectedSchool.id);
-    localStorage.setItem('wtn_school_name', selectedSchool.name);
+    try {
+      // Call Backend to Lock/Claim Email
+      const res = await fetch('/api/auth/join', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email,
+          schoolId: selectedSchool.id,
+          schoolName: selectedSchool.name
+        })
+      });
 
-    // Proceed to lobby
-    router.push('/prototype/lobby');
+      const data = await res.json();
+
+      if (!res.ok) {
+        // Handle Sabotage/Disqualified/Other Errors
+        if (data.code === 'SABOTAGE_BLOCK') {
+          throw new Error("ACCESS DENIED: This email is active in another session.");
+        }
+        if (data.code === 'DISQUALIFIED') {
+          router.push('/prototype/disqualified');
+          return;
+        }
+        throw new Error(data.error || "Login failed.");
+      }
+
+      // Success: Save local session & Redirect
+      console.log('Login successful:', data.status);
+      localStorage.setItem('wtn_user_email', email);
+      localStorage.setItem('wtn_school_id', selectedSchool.id);
+      localStorage.setItem('wtn_school_name', selectedSchool.name);
+
+      if (data.status === 'RESUMED' && data.prevStatus === 'COMPLETED') {
+        router.push('/prototype/results');
+      } else {
+        router.push('/prototype/lobby');
+      }
+
+    } catch (err: any) {
+      setError(err.message || "An unexpected error occurred.");
+      setIsJoining(false);
+    }
   };
 
   const handleResume = () => {
@@ -299,11 +338,11 @@ export default function LoginPage() {
 
             <Button
               type="submit"
-              disabled={!loginAllowed || isCheckingSession}
+              disabled={!loginAllowed || isCheckingSession || isJoining}
               className="w-full"
               size="lg"
             >
-               {loginAllowed ? 'Launch Quiz' : 'Please Wait'}
+               {isJoining ? 'Joining...' : (loginAllowed ? 'Launch Quiz' : 'Please Wait')}
             </Button>
           </form>
           )}

@@ -21,6 +21,7 @@ export async function GET(request: Request) {
     return NextResponse.json({
       startTime: session.startTime,
       durationMinutes: session.durationMinutes,
+      entryWindowMinutes: session.entryWindowMinutes, // Optional custom lobby window
       name: session.name
     });
 
