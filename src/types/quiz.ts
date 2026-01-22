@@ -5,6 +5,7 @@ export interface Question {
   difficulty: Difficulty;
   text: string;
   options: string[]; // Shuffled MCQ choices
+  image_url?: string; // Optional URL for question image
 }
 
 export interface UserState {

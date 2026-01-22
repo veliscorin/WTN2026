@@ -14,6 +14,7 @@ type Question = {
   difficulty: string;
   text: string;
   options: string[];
+  image_url?: string;
 };
 
 // Fisher-Yates shuffle algorithm
@@ -376,6 +377,17 @@ export default function QuizPage() {
               {currentQuestion.difficulty}
             </span>
           </div>
+          
+          {currentQuestion.image_url && (
+            <div className="mb-6 rounded-lg overflow-hidden border border-gray-200 dark:border-zinc-700 shadow-sm">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img 
+                    src={currentQuestion.image_url} 
+                    alt="Question Reference" 
+                    className="w-full max-h-[300px] object-cover"
+                />
+            </div>
+          )}
           
           <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-8 leading-tight">
             {currentQuestion.text}

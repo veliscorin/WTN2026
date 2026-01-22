@@ -1,7 +1,7 @@
 [
-  { "qid": "e1", "difficulty": "Easy", "text": "Which animal is known as the 'King of the Jungle'?", "options": ["Lion", "Tiger", "Elephant", "Giraffe"], "correct_key": "Lion" },
-  { "qid": "e2", "difficulty": "Easy", "text": "What is the largest land animal?", "options": ["Elephant", "Rhino", "Hippo", "Whale"], "correct_key": "Elephant" },
-  { "qid": "e3", "difficulty": "Easy", "text": "Which bird is famous for its colorful tail feathers?", "options": ["Peacock", "Parrot", "Eagle", "Penguin"], "correct_key": "Peacock" },
+  { "qid": "e1", "difficulty": "Easy", "text": "Which animal is known as the 'King of the Jungle'?", "options": ["Lion", "Tiger", "Elephant", "Giraffe"], "correct_key": "Lion", "image_url": "https://placehold.co/600x400?text=Lion" },
+  { "qid": "e2", "difficulty": "Easy", "text": "What is the largest land animal?", "options": ["Elephant", "Rhino", "Hippo", "Whale"], "correct_key": "Elephant", "image_url": "https://placehold.co/600x400?text=Elephant" },
+  { "qid": "e3", "difficulty": "Easy", "text": "Which bird is famous for its colorful tail feathers?", "options": ["Peacock", "Parrot", "Eagle", "Penguin"], "correct_key": "Peacock", "image_url": "https://placehold.co/600x400?text=Peacock" },
   { "qid": "e4", "difficulty": "Easy", "text": "What is the only mammal capable of true flight?", "options": ["Bat", "Flying Squirrel", "Ostrich", "Penguin"], "correct_key": "Bat" },
   { "qid": "e5", "difficulty": "Easy", "text": "Which animal has a long trunk?", "options": ["Elephant", "Giraffe", "Snake", "Monkey"], "correct_key": "Elephant" },
   { "qid": "e6", "difficulty": "Easy", "text": "What food do giant pandas primarily eat?", "options": ["Bamboo", "Meat", "Fish", "Berries"], "correct_key": "Bamboo" },
