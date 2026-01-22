@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { docClient } from '@/lib/aws-config';
-import { PutCommand } from '@aws-sdk/lib-dynamodb';
+import { PutCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,6 +15,7 @@ function toSingaporeISO(date: Date) {
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const SESSIONS_TABLE = process.env.DYNAMODB_SESSIONS_TABLE || "WTN_Sessions";
+  const USER_TABLE = process.env.DYNAMODB_USER_TABLE || "WTN_Participants";
   
   // Parse Query Params (Default: Lobby=3, Duration=5)
   const lobbyMinutes = parseInt(searchParams.get('lobby') || '3', 10);
@@ -37,16 +38,26 @@ export async function GET(request: Request) {
   };
 
   try {
-    const command = new PutCommand({
+    // 1. Reset the Session
+    const putSessionCommand = new PutCommand({
       TableName: SESSIONS_TABLE,
       Item: testSession
     });
+    await docClient.send(putSessionCommand);
 
-    await docClient.send(command);
+    // 2. Clear specific test users to allow re-testing
+    const testEmails = ["lax.chee@woven.sg", "weiliang.lee@woven.sg"];
+    for (const email of testEmails) {
+        await docClient.send(new DeleteCommand({
+            TableName: USER_TABLE,
+            Key: { email }
+        }));
+    }
 
     return NextResponse.json({
       success: true,
-      message: "Test session 'test_session_now' has been reset.",
+      message: "Test environment reset successfully.",
+      clearedUsers: testEmails,
       details: {
         startTime: startTimeStr,
         startsIn: `${lobbyMinutes} minutes`,
