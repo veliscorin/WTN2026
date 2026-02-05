@@ -294,7 +294,7 @@ export default function QuizPage() {
 
   if (isLoading || !quizQuestions) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-zinc-900">
+      <div className="min-h-screen flex items-center justify-center bg-transparent">
         <div className="text-xl font-semibold text-gray-600 dark:text-gray-400 animate-pulse">
           Loading Quiz Environment...
         </div>
@@ -306,133 +306,166 @@ export default function QuizPage() {
   const totalQuestions = quizQuestions.length;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-zinc-900 flex flex-col items-center py-10 px-4 select-none">
-      {/* Warning Modal */}
-      {showWarningModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <Card className="max-w-md w-full border-2 border-red-500 shadow-2xl">
-            <CardContent className="p-8 text-center">
-                <h2 className="text-2xl font-bold text-red-600 mb-4">⚠️ WARNING!</h2>
-                <p className="text-lg mb-6 text-gray-700 dark:text-gray-300">
-                Do not leave the exam! You have {strikeCount} strike(s).
-                <br />
-                <span className="font-bold">3 strikes will result in immediate disqualification.</span>
-                </p>
-                <Button 
-                variant="danger"
-                onClick={() => setShowWarningModal(false)}
-                className="w-full"
-                >
-                I Understand
-                </Button>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      <Card className="w-full max-w-3xl border-0 sm:border shadow-lg overflow-hidden">
-        {/* System Bar */}
-        <div className="bg-gray-50 dark:bg-zinc-950/50 px-6 py-2 border-b border-gray-200 dark:border-zinc-800 flex justify-between items-center text-xs font-mono text-gray-500 dark:text-gray-400">
-            <span className="truncate max-w-[200px]" title={userEmail || ''}>{userEmail}</span>
-            <span className="truncate max-w-[200px]" title={schoolName || ''}>{schoolName || schoolId}</span>
-        </div>
-
-        {/* Header: Progress, Timer & Strikes */}
-        <div className="bg-gray-100 dark:bg-zinc-900/50 p-6 flex flex-col sm:flex-row justify-between items-center border-b border-gray-200 dark:border-zinc-700 gap-4">
-          <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-8">
-             <div className="text-lg font-semibold text-gray-600 dark:text-gray-400">
-              Question <span className="text-black dark:text-white text-xl">{currentQuestionIndex + 1}</span> of {totalQuestions}
+    <div className="min-h-screen bg-transparent flex flex-col md:flex-row relative p-4 md:p-8 overflow-hidden font-[Agenda,sans-serif]">
+      
+      {/* --- LEFT COLUMN: Logo, Info, Timer --- */}
+      <div className="flex-1 flex flex-col justify-between max-w-xl relative z-10 pb-20 md:pb-0">
+        
+        {/* Top: Logo & Description */}
+        <div className="space-y-6 mt-4 md:mt-8 pl-4">
+            {/* Logo */}
+            <div className="w-64 md:w-80">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/images/login-logo.png" alt="WTN Logo" className="w-full h-auto" />
             </div>
-            {timeRemaining !== null && (
-              <div className="bg-gray-200 dark:bg-zinc-700 px-4 py-1 rounded-full font-mono font-bold text-gray-800 dark:text-gray-200">
-                ⏱ {formatTime(timeRemaining)}
-              </div>
-            )}
-          </div>
-          
-          <div className="flex items-center gap-3">
-            <span className="text-sm font-medium text-gray-500 uppercase tracking-wider">Strikes:</span>
-            <div className="flex gap-2">
+            
+            {/* Description Text */}
+            <p className="text-[#333132] text-lg md:text-xl max-w-md font-medium leading-relaxed">
+                Answer {totalQuestions} questions and get up to speed on news from Singapore and around the world.
+            </p>
+        </div>
+
+        {/* Bottom: Timer Board */}
+        <div className="mt-auto mb-8 pl-4 relative">
+             {/* Placeholder Timer Styling - To be replaced by asset later */}
+             <div className="bg-[#242F6B] text-white rounded-2xl p-6 w-full max-w-sm shadow-xl relative overflow-visible">
+                {/* Decorative Bolts (CSS Placeholder) */}
+                <div className="absolute top-2 left-2 w-2 h-2 bg-gray-500 rounded-full opacity-50"></div>
+                <div className="absolute top-2 right-2 w-2 h-2 bg-gray-500 rounded-full opacity-50"></div>
+                <div className="absolute bottom-2 left-2 w-2 h-2 bg-gray-500 rounded-full opacity-50"></div>
+                <div className="absolute bottom-2 right-2 w-2 h-2 bg-gray-500 rounded-full opacity-50"></div>
+
+                <div className="flex items-center justify-between">
+                    <div>
+                        <p className="text-sm font-bold uppercase tracking-widest text-blue-200 mb-1">Timer</p>
+                        <div 
+                            className="text-6xl font-bold leading-none tabular-nums"
+                            style={{ fontFamily: 'var(--font-parkinsans), sans-serif' }}
+                        >
+                             {timeRemaining !== null ? formatTime(timeRemaining) : "00:00"}
+                        </div>
+                    </div>
+                    {/* Clock Icon Placeholder */}
+                    <div className="text-4xl">⏱️</div> 
+                </div>
+             </div>
+        </div>
+      </div>
+
+      {/* --- RIGHT COLUMN: Question Card --- */}
+      <div className="flex-[1.5] flex items-center justify-center relative z-10 p-4">
+        
+        {/* Main Question Card */}
+        <Card className="w-full max-w-2xl bg-white !bg-white rounded-[40px] shadow-2xl border-0 overflow-hidden relative">
+            <CardContent className="p-8 md:p-10 space-y-6">
+                
+                {/* 1. Question Image */}
+                {currentQuestion.image_url && (
+                    <div className="rounded-2xl overflow-hidden border border-gray-100 shadow-sm">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img 
+                            src={currentQuestion.image_url} 
+                            alt="Question Reference" 
+                            className="w-full h-64 object-cover"
+                        />
+                    </div>
+                )}
+
+                {/* 2. Label & Text */}
+                <div className="space-y-4">
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+                        QUESTION {String(currentQuestionIndex + 1).padStart(2, '0')} - {totalQuestions}
+                    </p>
+                    <h2 className="text-2xl md:text-3xl font-bold text-[#333132] leading-tight">
+                        {currentQuestion.text}
+                    </h2>
+                </div>
+
+                {/* 3. Options (A, B, C...) */}
+                <div className="grid grid-cols-1 gap-4 pt-2">
+                    {currentQuestion.options.map((option, idx) => {
+                        const letters = ['A', 'B', 'C', 'D', 'E'];
+                        const letter = letters[idx] || '?';
+                        const isSelected = selectedOption === option;
+
+                        return (
+                            <button
+                                key={idx}
+                                onClick={() => handleOptionSelect(option)}
+                                className={cn(
+                                    "w-full text-left p-4 rounded-2xl border-2 transition-all duration-200 flex items-center gap-4 group",
+                                    isSelected 
+                                        ? 'border-[#F38133] bg-orange-50 shadow-md' 
+                                        : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                                )}
+                            >
+                                {/* Circle Letter Indicator */}
+                                <div className={cn(
+                                    "flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg border-2 transition-colors",
+                                    isSelected
+                                        ? "bg-[#F38133] border-[#F38133] text-white"
+                                        : "bg-white border-[#F38133] text-[#F38133]"
+                                )}>
+                                    {letter}
+                                </div>
+                                
+                                {/* Option Text */}
+                                <span className={cn(
+                                    "text-lg font-medium",
+                                    isSelected ? 'text-[#333132]' : 'text-gray-600'
+                                )}>
+                                    {option}
+                                </span>
+                            </button>
+                        );
+                    })}
+                </div>
+
+                {/* 4. Action Button (Hidden until selected?) or Visible? Keeping visible for now */}
+                <div className="pt-4 flex justify-end">
+                  <Button
+                    onClick={handleNext}
+                    disabled={!selectedOption}
+                    className={cn(
+                        "rounded-full px-8 h-12 text-lg font-bold transition-all shadow-lg",
+                        selectedOption 
+                            ? "bg-[#F38133] hover:bg-[#d9722b] text-white transform active:scale-95" 
+                            : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                    )}
+                  >
+                    {currentQuestionIndex === totalQuestions - 1 ? 'FINISH EXAM' : 'NEXT QUESTION'}
+                  </Button>
+                </div>
+
+            </CardContent>
+        </Card>
+      </div>
+
+      {/* --- TOP RIGHT: Rule Violations (Absolute) --- */}
+      <div className="absolute top-4 right-4 md:top-8 md:right-8 z-50">
+        <div className="bg-white rounded-full px-4 py-2 shadow-md border border-gray-100 flex items-center gap-3">
+            <div className="flex items-center gap-2 text-red-600 font-bold text-sm uppercase tracking-wide">
+                <span className="text-lg">⚠️</span> Rule Violations
+            </div>
+            {/* Flags */}
+            <div className="flex gap-1">
               {[1, 2, 3].map((i) => (
-                <div 
-                  key={i} 
-                  className={`w-4 h-4 rounded-full transition-colors duration-300 ${
-                    strikeCount >= i ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]' : 'bg-gray-300 dark:bg-zinc-600'
-                  }`}
-                />
+                <div key={i} className="relative">
+                     {/* Placeholder Flag Icon */}
+                     <svg 
+                        width="20" height="20" viewBox="0 0 24 24" 
+                        fill={strikeCount >= i ? "#EF4444" : "#E5E7EB"} // Red if struck, Gray if safe
+                        xmlns="http://www.w3.org/2000/svg"
+                     >
+                        <path d="M14.4 6L14 4H5V21H7V14H12.6L13 16H20V6H14.4Z" />
+                     </svg>
+                </div>
               ))}
             </div>
-          </div>
         </div>
+      </div>
 
-        {/* Question Area */}
-        <div className="p-8 sm:p-10">
-          <div className="mb-2">
-            <span className={cn(
-                "inline-block px-3 py-1 rounded-full text-xs font-bold tracking-wide uppercase",
-                currentQuestion.difficulty === 'Easy' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
-                currentQuestion.difficulty === 'Medium' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
-                'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-            )}>
-              {currentQuestion.difficulty}
-            </span>
-          </div>
-          
-          {currentQuestion.image_url && (
-            <div className="mb-6 rounded-lg overflow-hidden border border-gray-200 dark:border-zinc-700 shadow-sm">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img 
-                    src={currentQuestion.image_url} 
-                    alt="Question Reference" 
-                    className="w-full max-h-[300px] object-cover"
-                />
-            </div>
-          )}
-          
-          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-8 leading-tight">
-            {currentQuestion.text}
-          </h2>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {currentQuestion.options.map((option, idx) => (
-              <button
-                key={idx}
-                onClick={() => handleOptionSelect(option)}
-                className={cn(
-                    "w-full text-left p-5 rounded-lg border-2 transition-all duration-200 group flex items-center justify-between",
-                    selectedOption === option 
-                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 shadow-md transform scale-[1.01]' 
-                        : 'border-gray-200 dark:border-zinc-700 hover:border-gray-300 dark:hover:border-zinc-600 hover:bg-gray-50 dark:hover:bg-zinc-700/50'
-                )}
-              >
-                <span className={cn(
-                    "text-lg font-medium",
-                    selectedOption === option ? 'text-blue-700 dark:text-blue-300' : 'text-gray-700 dark:text-gray-300'
-                )}>
-                  {option}
-                </span>
-                {selectedOption === option && (
-                  <svg className="w-6 h-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                )}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Footer: Action Button */}
-        <div className="bg-gray-50 dark:bg-zinc-900/50 p-6 border-t border-gray-200 dark:border-zinc-700 flex justify-end">
-          <Button
-            onClick={handleNext}
-            disabled={!selectedOption}
-            size="lg"
-            className={cn("px-8 text-lg shadow-lg", !selectedOption && "bg-gray-300 text-gray-500")}
-          >
-            {currentQuestionIndex === totalQuestions - 1 ? 'Finish Exam' : 'Confirm & Next'}
-          </Button>
-        </div>
-      </Card>
     </div>
   );
+
 }

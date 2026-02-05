@@ -16,7 +16,7 @@ export default function DisqualifiedPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-red-50 dark:bg-red-950/20 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-transparent p-4">
       <Card className="max-w-md w-full border-2 border-red-600 shadow-2xl bg-white dark:bg-zinc-900">
         <CardHeader className="text-center flex flex-col items-center">
           <AlertTriangle className="w-16 h-16 text-red-600 mb-4" />

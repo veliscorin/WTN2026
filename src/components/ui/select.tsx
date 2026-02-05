@@ -18,19 +18,19 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
         >
           {children}
         </select>
-        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500 dark:text-gray-400">
+        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2">
           <svg
-            className="h-4 w-4"
-            fill="none"
-            stroke="currentColor"
+            className="h-3 w-3 opacity-60"
             viewBox="0 0 24 24"
+            fill="none"
             xmlns="http://www.w3.org/2000/svg"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M19 9l-7 7-7-7"
+            <path 
+              d="M12 19L5 8H19L12 19Z" 
+              fill="#333132" 
+              stroke="#333132" 
+              strokeWidth="2" 
+              strokeLinejoin="round" 
             />
           </svg>
         </div>

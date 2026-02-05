@@ -63,7 +63,7 @@ export default function ResultsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-zinc-900">
+      <div className="min-h-screen flex items-center justify-center bg-transparent">
         <Loader2 className="w-10 h-10 animate-spin text-indigo-600" />
         <span className="ml-3 text-lg font-medium text-gray-600 dark:text-gray-300">Processing Results...</span>
       </div>
@@ -72,7 +72,7 @@ export default function ResultsPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-zinc-900 p-4">
+      <div className="min-h-screen flex items-center justify-center bg-transparent p-4">
         <Card className="border-red-500 max-w-md w-full">
             <CardHeader>
                 <CardTitle className="text-red-600">Error</CardTitle>
@@ -88,7 +88,7 @@ export default function ResultsPage() {
   const percentage = Math.round((data.score / data.total) * 100) || 0;
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-zinc-900 py-10 px-4">
+    <div className="min-h-screen bg-transparent py-10 px-4">
       <div className="max-w-4xl mx-auto space-y-6">
         
         {/* Score Card */}

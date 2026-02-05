@@ -234,127 +234,149 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-zinc-900 transition-colors duration-200 p-4">
-      <Card className="w-full max-w-md md:max-w-lg shadow-md border-0 md:border">
-        <CardHeader className="text-center space-y-2">
-          <CardTitle className="text-3xl font-bold">WTN 2026</CardTitle>
-          <CardDescription className="text-lg font-medium">
-              {existingSession ? 'Resume Session' : 'Student Login'}
-          </CardDescription>
-        </CardHeader>
-        
-        <CardContent>
-          {existingSession ? (
-              <div className="space-y-6">
-                  <div className="bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-lg border border-indigo-100 dark:border-indigo-800 text-center space-y-2">
-                      <p className="text-sm text-gray-500 dark:text-gray-400 uppercase font-semibold tracking-wider">Logged in as</p>
-                      <p className="text-lg font-bold text-indigo-700 dark:text-indigo-300 font-mono">
-                          {existingSession.email}
-                      </p>
-                      <p className="text-sm text-gray-600 dark:text-gray-300">
-                          {existingSession.schoolName}
-                      </p>
-                  </div>
-                  
-                  <div className="space-y-3">
-                    <Button 
-                        onClick={handleResume} 
-                        className="w-full text-lg h-12"
-                    >
-                        {existingSession.isCompleted ? 'View Results' : 'Resume Quiz'}
-                    </Button>
-                    <button 
-                        onClick={handleSwitchAccount}
-                        className="w-full text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:underline transition-colors"
-                    >
-                        Not you? Switch account
-                    </button>
-                  </div>
-              </div>
-          ) : (
-          <form className="space-y-6" onSubmit={handleLogin}>
-            {/* School Selection */}
-            <div className="space-y-2">
-              <label htmlFor="school" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                School
-              </label>
-              <Select
-                id="school"
-                name="school"
-                value={selectedSchool?.id || ''}
-                onChange={(e) => {
-                  const school = schools.find(s => s.id === e.target.value);
-                  setSelectedSchool(school || null);
-                }}
-                disabled={isLoadingSchools}
-              >
-                {isLoadingSchools ? (
-                  <option>Loading schools...</option>
+    <div className="flex items-center justify-center min-h-screen bg-transparent transition-colors duration-200 p-4 relative">
+      <div className="relative w-full max-w-sm flex flex-col items-center">
+        {/* Logo - Absolutely positioned above the card */}
+        <div className="absolute bottom-full mb-6 w-full z-0 px-2">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/images/login-logo.png" alt="WTN Logo" className="w-full h-auto" />
+        </div>
+
+        <div className="relative w-full">
+            {/* Mascot - Shifted right by 10px from previous position */}
+            <div className="absolute -top-8 right-[22px] z-20 hidden md:block pointer-events-none">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/images/login-mascot.png" alt="Mascot" className="h-32 w-auto transform rotate-6" />
+            </div>
+
+            <Card className="relative z-10 w-full bg-white !bg-white dark:!bg-white rounded-[20px] shadow-2xl border-0 overflow-visible">
+              <CardHeader className="text-left space-y-2 pt-8 px-8">
+                <CardTitle 
+                    className="text-[28px] font-bold text-[#242F6B]"
+                    style={{ fontFamily: 'var(--font-parkinsans), sans-serif' }}
+                >
+                    Student Login
+                </CardTitle>
+                <CardDescription className="text-lg font-medium sr-only">
+                    {existingSession ? 'Resume Session' : 'Enter your details'}
+                </CardDescription>
+              </CardHeader>
+              
+              <CardContent className="pb-10 px-8" style={{ fontFamily: 'Agenda, sans-serif' }}>
+                {existingSession ? (
+                    <div className="space-y-6">
+                        <div className="bg-[#F6F0EB] p-4 rounded-xl border border-indigo-100 text-center space-y-2">
+                            <p className="text-sm text-gray-500 uppercase font-semibold tracking-wider">Logged in as</p>
+                            <p className="text-lg font-bold text-[#333132] font-mono">
+                                {existingSession.email}
+                            </p>
+                            <p className="text-sm text-gray-600">
+                                {existingSession.schoolName}
+                            </p>
+                        </div>
+                        
+                        <div className="space-y-3">
+                          <Button 
+                              onClick={handleResume} 
+                              className="w-full text-lg h-12 bg-[#F38133] hover:bg-[#d9722b] text-white rounded-full font-bold shadow-md"
+                          >
+                              {existingSession.isCompleted ? 'View Results' : 'Resume Quiz'}
+                          </Button>
+                          <button 
+                              onClick={handleSwitchAccount}
+                              className="w-full text-sm text-gray-500 hover:text-gray-700 hover:underline transition-colors"
+                          >
+                              Not you? Switch account
+                          </button>
+                        </div>
+                    </div>
                 ) : (
-                  schools.map((school) => (
-                    <option key={school.id} value={school.id}>
-                      {school.name}
-                    </option>
-                  ))
+                <form className="space-y-6" onSubmit={handleLogin}>
+                  {/* School Selection */}
+                  <div className="space-y-2">
+                    <label htmlFor="school" className="block text-sm font-bold text-[#333132] ml-1">
+                      Select Your School
+                    </label>
+                    <div className="relative">
+                        <Select
+                            id="school"
+                            name="school"
+                            value={selectedSchool?.id || ''}
+                            onChange={(e) => {
+                            const school = schools.find(s => s.id === e.target.value);
+                            setSelectedSchool(school || null);
+                            }}
+                            disabled={isLoadingSchools}
+                            className="!bg-[#F6F0EB] border border-[#C7C8CA] rounded-xl h-12 text-gray-700 font-medium focus:ring-2 focus:ring-[#F38133] dark:!bg-[#F6F0EB] dark:text-gray-700 dark:border-[#C7C8CA]"
+                        >
+                            {isLoadingSchools ? (
+                            <option>Loading schools...</option>
+                            ) : (
+                            schools.map((school) => (
+                                <option key={school.id} value={school.id}>
+                                {school.name}
+                                </option>
+                            ))
+                            )}
+                        </Select>
+                    </div>
+                  </div>
+
+                  {/* Status Message / Login Block */}
+                  {!loginAllowed && !isLoadingSchools && (
+                     <div className="p-4 rounded-xl bg-yellow-50 text-yellow-800 text-center text-sm font-medium border border-yellow-100">
+                        {isCheckingSession ? "Checking session..." : (statusMessage || "Quiz not started.")}
+                     </div>
+                  )}
+
+                                {/* Email Input - Hidden if not allowed */}
+                                {loginAllowed && (
+                                <div className="space-y-2">
+                                  <label htmlFor="email" className="block text-sm font-bold text-[#333132] ml-1">
+                                    Your Student Email
+                                  </label>
+                                  <div className="flex">                      <Input
+                        id="email"
+                        name="email"
+                        type="text"
+                        value={emailPrefix}
+                        onChange={(e) => setEmailPrefix(e.target.value.toLowerCase())}
+                        placeholder="e.g. li_weiliang"
+                        className="flex-1 !bg-[#F6F0EB] border border-[#C7C8CA] border-r-0 rounded-l-xl rounded-r-none h-12 shadow-none focus:z-10 focus:ring-2 focus:ring-[#F38133] placeholder:text-gray-400 dark:!bg-[#F6F0EB] dark:text-gray-700 dark:border-[#C7C8CA] dark:border-r-0"
+                      />
+                      <span className="inline-flex items-center px-4 text-gray-600 font-medium bg-[#EEE7E1] border border-[#C7C8CA] border-l-0 rounded-r-xl h-12 whitespace-nowrap dark:border-[#C7C8CA] dark:border-l-0">
+                        @{selectedSchool?.domain || '...'}
+                      </span>
+                    </div>
+                  </div>
+                  )}
+
+                  {error && (
+                    <div className="p-3 text-sm text-red-700 bg-red-100 rounded-xl text-center font-medium">
+                      {error}
+                    </div>
+                  )}
+
+                  <Button
+                    type="submit"
+                    disabled={!loginAllowed || isCheckingSession || isJoining}
+                    className="w-full h-12 text-lg bg-[#F38133] hover:bg-[#d9722b] text-white rounded-full font-bold shadow-md transition-all transform active:scale-95"
+                  >
+                     {isJoining ? 'JOINING...' : (loginAllowed ? 'LAUNCH QUIZ' : 'PLEASE WAIT')}
+                  </Button>
+                </form>
                 )}
-              </Select>
-            </div>
+              </CardContent>
 
-            {/* Status Message / Login Block */}
-            {!loginAllowed && !isLoadingSchools && (
-               <div className="p-4 rounded-md bg-yellow-50 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200 text-center text-sm font-medium">
-                  {isCheckingSession ? "Checking session..." : (statusMessage || "Quiz not started.")}
-               </div>
-            )}
-
-            {/* Email Input - Hidden if not allowed */}
-            {loginAllowed && (
-            <div className="space-y-2">
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Email Address
-              </label>
-              <div className="flex">
-                <Input
-                  id="email"
-                  name="email"
-                  type="text"
-                  value={emailPrefix}
-                  onChange={(e) => setEmailPrefix(e.target.value.toLowerCase())}
-                  placeholder="e.g. li_weiliang"
-                  className="rounded-r-none focus:z-10"
-                />
-                <span className="inline-flex items-center px-3 text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-zinc-600 border border-l-0 border-gray-300 dark:border-zinc-600 rounded-r-md sm:text-sm whitespace-nowrap">
-                  @{selectedSchool?.domain || '...'}
-                </span>
-              </div>
-            </div>
-            )}
-
-            {error && (
-              <div className="p-3 text-sm text-red-700 bg-red-100 dark:bg-red-900/30 dark:text-red-300 rounded-md">
-                {error}
-              </div>
-            )}
-
-            <Button
-              type="submit"
-              disabled={!loginAllowed || isCheckingSession || isJoining}
-              className="w-full"
-              size="lg"
-            >
-               {isJoining ? 'Joining...' : (loginAllowed ? 'Launch Quiz' : 'Please Wait')}
-            </Button>
-          </form>
-          )}
-        </CardContent>
-
-        <CardFooter className="justify-center text-center">
-            <div className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
-                <p>Please use a supported browser on your PLD.</p>
-                <p>By joining, you agree to the exam regulations.</p>
-            </div>
-        </CardFooter>
-      </Card>
+              <CardFooter className="justify-center text-center pb-8" style={{ fontFamily: 'Agenda, sans-serif' }}>
+                  <div className="text-xs text-gray-400 space-y-1">
+                      <p>Please use a supported browser on your PLD.</p>
+                      <p>By joining, you agree to the exam regulations.</p>
+                  </div>
+              </CardFooter>
+            </Card>
+        </div>
+      </div>
     </div>
   );
 }
